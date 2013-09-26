@@ -310,7 +310,7 @@ class Mapper:
     def __init__(self, mapper_id, inputs, work_dir, module, partition_count):
         self.work_dir = work_dir
 
-        print "I am mapper", mapper_id, ", and I'm mapping", len(inputs), "inputs:", inputs
+        print "I am mapper", mapper_id, ", and I'm mapping", len(inputs), "inputs"
         output_file = os.path.join(work_dir, "mapper_" + str(mapper_id))
         mapfunc = getattr(module, 'map', None)
         # TODO: pre-create all the files to avoid the situation where we don't
