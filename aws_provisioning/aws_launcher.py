@@ -40,7 +40,8 @@ class Launcher(object):
             raid_devices.sort()
             dev_list = " ".join(raid_devices)
             # by default one of the ephemeral devices gets mounted on /mnt
-            sudo("umount /mnt")
+            # on some images but not telemetry-base
+            sudo("umount /mnt || true")
             sudo("yes | mdadm --create /dev/md0 --level=0 -c64 --raid-devices={0} {1}".format(len(raid_devices), dev_list))
             sudo("echo 'DEVICE {0}' >> /etc/mdadm/mdadm.conf".format(dev_list))
             sudo("mdadm --detail --scan >> /etc/mdadm/mdadm.conf")
