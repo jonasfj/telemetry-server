@@ -7,6 +7,8 @@
 
 import time, os
 import boto.ec2
+from boto.ec2.blockdevicemapping import BlockDeviceType
+from boto.ec2.blockdevicemapping import BlockDeviceMapping
 from fabric.api import *
 from fabric.exceptions import NetworkError
 
@@ -34,12 +36,21 @@ def create_instance(config, aws_key=None, aws_secret_key=None):
     # Known images:
     # ami-bf1d8a8f == Ubuntu 13.04
     # ami-76831f46 == telemetry-base (based on Ubuntu 13.04 with dependencies already installed)
+
+    # See if ephemerals have been specified
+    mapping = None
+    if "ephemeral_map" in config:
+        mapping = BlockDeviceMapping()
+        for device, ephemeral in config["ephemeral_map"].iteritems():
+            mapping[device] = BlockDeviceType(ephemeral_name=ephemeral)
+
     reservation = conn.run_instances(
             config.get("image", "ami-bf1d8a8f"),
             key_name=config["ssl_key_name"],
             instance_type=itype,
             security_groups=config["security_groups"],
             placement=config["placement"],
+            block_device_map=mapping,
             instance_initiated_shutdown_behavior=config.get("shutdown_behavior", "stop"))
 
     instance = reservation.instances[0]
@@ -85,7 +96,7 @@ def install_packages(packages):
     with settings(warn_only=True):
         for i in range(1,20):
             sudo("apt-get update")
-            result = sudo(" ".join(('apt-get --yes install', packages)))
+            result = sudo(" ".join(('export DEBIAN_FRONTEND=noninteractive; apt-get --yes install', packages)))
             if result.succeeded:
                 break
             print "apt-get attempt", i, "failed, retrying in 2s"
