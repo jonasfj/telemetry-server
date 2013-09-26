@@ -80,6 +80,8 @@ class Launcher(object):
         pass
 
     def pre_install(self, instance):
+        if "pre_install_commands" in self.config:
+            sudo(self.config["pre_install_commands"])
         pass
 
     def post_install(self, instance):
