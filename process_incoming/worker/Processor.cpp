@@ -8,6 +8,7 @@
 #include "RecordWriter.h"
 
 #define MAX_SIZE    1024 * 1024 * 1024
+#define MAX_MEM     512 * 1024 * 1024
 
 using namespace std;
 using namespace mozilla::Telemetry;
@@ -19,7 +20,7 @@ int main(int argc, const char* argv[])
   string workingFolder = "working/";
   string uploadFolder = "upload/";
 
-  RecordWriter writer(workingFolder, uploadFolder, MAX_SIZE, MAX_SIZE);
+  RecordWriter writer(workingFolder, uploadFolder, MAX_SIZE, MAX_MEM, 0);
 
   ifstream input(inputFile);
 

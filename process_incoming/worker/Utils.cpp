@@ -49,14 +49,18 @@ bool mkdirp(const char* path, mode_t mode = DEFAULT_MODE) {
 namespace mozilla {
 namespace Utils {
 
-void EnsurePath(const std::string& aPath) {
-  mkdirp(aPath.c_str());
+bool EnsurePath(const std::string& aPath) {
+  return mkdirp(aPath.c_str());
 }
 
 
 UUIDGenerator::UUIDGenerator()
- : mGenerator((std::random_device())()), mDistribution(0, 15), mUUID(36, '0')
+ : mGenerator(),
+ mDistribution(0, 15),
+ mUUID(36, '0')
 {
+  std::random_device rd;
+  mGenerator.seed(rd());
 }
 
 const std::string& UUIDGenerator::GetUUID()

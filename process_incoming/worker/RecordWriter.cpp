@@ -14,6 +14,8 @@ using namespace std;
 
 namespace mu = mozilla::Utils;
 
+#define REPRIORIZATION_INTERVAL     1000
+
 /** Compression memory requirements from man xz(1) */
 static size_t PresetCompressionContextMemorySize[] = {
   3145728, 9437184, 17825792, 33554432, 50331648, 98566144, 98566144,
@@ -48,7 +50,7 @@ public:
   bool Write(const char* aRecord, size_t aLength);
 
   /** True, if on-the-fly compression can be added */
-  bool CanAddCompression const
+  bool CanAddCompression() const
   {
     assert(!IsCorrupted());
     return mUncompressedRawSize > MIN_COMRESS_CHUNCK;
@@ -161,7 +163,7 @@ private:
 };
 
 
-bool OutputFile::Write(const char* aRecord, size_t aLength)
+bool RecordWriter::OutputFile::Write(const char* aRecord, size_t aLength)
 {
   // Sanity checking internal state
   assert(!IsCorrupted());
@@ -178,7 +180,7 @@ bool OutputFile::Write(const char* aRecord, size_t aLength)
   if (mCompressor) {
     assert(mCompressedFile && mUncompressedRawSize == 0);
     // If writing to compressed file fails, we return for clean process abortion
-    if (!mCompressor.Write(aRecord, aLength)) {
+    if (!mCompressor->Write(aRecord, aLength)) {
       mIsCorrupted = true;
       return false;
     }
@@ -216,7 +218,7 @@ bool OutputFile::Write(const char* aRecord, size_t aLength)
   return true;
 }
 
-bool OutputFile::AddCompressor()
+bool RecordWriter::OutputFile::AddCompressor()
 {
   // Sanity checking internal state
   assert(!IsCorrupted());
@@ -235,7 +237,7 @@ bool OutputFile::AddCompressor()
 
   // Create compressor
   mCompressor = new CompressedFileWriter(mCompressedFile);
-  if (!mCompressor.Initialize(mOwner.CompressionPreset())) {
+  if (!mCompressor->Initialize(mOwner.CompressionPreset())) {
     mIsCorrupted = true;
     return false;
   }
@@ -258,7 +260,7 @@ bool OutputFile::AddCompressor()
     }
 
     // Write to compressor
-    if (!mCompressor.Write(buffer, read)) {
+    if (!mCompressor->Write(buffer, read)) {
       mIsCorrupted = true;
       return false;
     }
@@ -283,14 +285,14 @@ bool OutputFile::AddCompressor()
   return true;
 }
 
-bool OutputFile::RemoveCompressor()
+bool RecordWriter::OutputFile::RemoveCompressor()
 {
   assert(!IsCorrupted());
   assert(!mRawFile);
   assert(mCompressor && mCompressedFile);
 
   // Finalize compressor
-  if (mCompressor.Finalize()) {
+  if (mCompressor->Finalize()) {
     fprintf(stderr, "OutputFile::RemoveCompressor: Failed to finalize"
                     "compressor.\n");
     mIsCorrupted = true;
@@ -300,10 +302,12 @@ bool OutputFile::RemoveCompressor()
   // Delete compressor
   delete mCompressor;
   mCompressor = nullptr;
+  
+  return true;
 }
 
 
-bool OutputFile::Finalize()
+bool RecordWriter::OutputFile::Finalize()
 {
   assert(!IsCorrupted());
 
@@ -345,7 +349,7 @@ bool OutputFile::Finalize()
   }
 
   // Move atomically to the upload folder
-  if (frename(CompressedPath().c_str(), FinishedPath().c_str())) {
+  if (rename(CompressedPath().c_str(), FinishedPath().c_str())) {
     fprintf(stderr, "OutputFile::AddCompressor: failed to rename() finished "
                     "file to upload folder: %s\n", strerror(errno));
     mIsCorrupted = true;
@@ -414,7 +418,6 @@ bool RecordWriter::Finalize()
 
   // Serialize each file
   for (auto it = mFileMap.begin(); it != mFileMap.end(); it++) {
-    const string& path = it->first;
     auto file = it->second;
 
     // Don't try to finalized corrupted files, behavior is undefined
@@ -445,10 +448,10 @@ bool RecordWriter::ReprioritizeCompression()
   }
 
   // Sort after mRecordsSinceLastReprioritization
-  sort(files.begin(), files.end(), [](const OutputFile& f1,
-                                      const OutputFile& f2) {
-    return f2.RecordsSinceLastReprioritization() <
-           f1.RecordsSinceLastReprioritization();
+  sort(files.begin(), files.end(), [](const OutputFile* f1,
+                                      const OutputFile* f2) {
+    return f2->RecordsSinceLastReprioritization() <
+           f1->RecordsSinceLastReprioritization();
   });
 
   // Figure out how many compression contexts we can have
@@ -481,6 +484,8 @@ bool RecordWriter::ReprioritizeCompression()
   for(auto kv : mFileMap) {
     kv.second->ResetReprioritizationRecordCounter();
   }
+  
+  return true;
 }
 
 

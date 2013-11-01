@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "Utils.h"
+
 namespace mozilla {
 
 namespace Telemetry {

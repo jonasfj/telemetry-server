@@ -7,11 +7,12 @@
 namespace mozilla {
 namespace Utils {
 
-void EnsurePath(const std::string& aPath);
+bool EnsurePath(const std::string& aPath);
 
 /** Simple class for generation UUIDs version 4 */
 class UUIDGenerator
 {
+public:
   UUIDGenerator();
 
   /** Get a UUID */
