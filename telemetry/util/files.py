@@ -8,7 +8,7 @@
 import hashlib
 import struct, gzip
 import StringIO as StringIO
-
+import traceback
 
 # might as well return the size too...
 def md5file(filename, chunksize=8192):
@@ -26,7 +26,7 @@ def md5file(filename, chunksize=8192):
 # 15 == 1 separator + 2 len_path + 4 len_data + 8 timestamp
 RECORD_PREAMBLE_LENGTH = 15
 
-def unpack(filename, raw=False, verbose=False):
+def unpack_incoming_file(filename, raw=False, verbose=False):
     fin = open(filename, "rb")
 
     record_count = 0
@@ -82,3 +82,24 @@ def unpack(filename, raw=False, verbose=False):
     if verbose:
         print "Processed", record_count, "records, with", bad_records, "bad records, and skipped", total_bytes_skipped, "bytes of corruption"
     fin.close()
+
+
+def unpack_SEQ_file(filename, raw=False, verbose=False):
+    count = 0
+    with open(filename, "r") as f:
+        for line in f:
+            try:
+                meta, data = line.split('\t')
+                uuid, timestamp = meta.split(" ")
+                timestamp = int(timestamp)
+                uuid = uuid[8:]
+                path = uuid + "/UNKNOWN/UNKNOWN/UNKNOWN/UNKNOWN/UNKNOWN"
+                count += 1
+                yield len(path), len(data), timestamp, path, data, None
+            except:
+                traceback.print_exc()
+                continue
+    print "Processed %i records" % count
+
+unpack = unpack_SEQ_file
+#unpack = unpack_incoming_file

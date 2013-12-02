@@ -211,9 +211,9 @@ class ReadRawStep(PipeStep):
                     else:
                         parsed_data, parsed_dims = self.converter.convert_json(data, dims[-1])
                         # TODO: take this out if it's too slow
-                        for i in range(len(dims)):
-                            if dims[i] != parsed_dims[i]:
-                                print self.label, "Record", self.records_read, "mismatched dimension", i, dims[i], "!=", parsed_dims[i]
+                        #for i in range(len(dims)):
+                        #    if dims[i] != parsed_dims[i]:
+                        #        print self.label, "Record", self.records_read, "mismatched dimension", i, dims[i], "!=", parsed_dims[i]
                         serialized_data = self.converter.serialize(parsed_data)
                         dims = parsed_dims
                         data_version = 2
@@ -479,7 +479,7 @@ def main():
         converter = Converter(cache, schema)
     storage = StorageLayout(schema, args.output_dir, args.max_output_size)
 
-    num_cpus = multiprocessing.cpu_count()
+    num_cpus = 1# multiprocessing.cpu_count()
 
     start = datetime.now()
     conn = None
@@ -615,7 +615,7 @@ def main():
             print "  Dry run, so not really deleting", f
         else:
             print "  Deleting", f
-            incoming_bucket.delete_key(f)
+            #incoming_bucket.delete_key(f)
             # Delete file locally too.
             os.remove(os.path.join(args.work_dir, f))
     print "Done"

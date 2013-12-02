@@ -19,11 +19,11 @@ import logging
 
 class StorageLayout:
     """A class for encapsulating the on-disk data layout for Telemetry"""
-    COMPRESSED_SUFFIX = ".lzma"
-    if os.path.isfile("/usr/bin/lzma"):
-      COMPRESS_PATH = "/usr/bin/lzma"
-    elif os.path.isfile("/usr/local/bin/lzma"):
-      COMPRESS_PATH = "/usr/local/bin/lzma"
+    COMPRESSED_SUFFIX = ".xz"
+    if os.path.isfile("/usr/bin/xz"):
+      COMPRESS_PATH = "/usr/bin/xz"
+    elif os.path.isfile("/usr/local/bin/xz"):
+      COMPRESS_PATH = "/usr/local/bin/xz"
     COMPRESSION_ARGS = ["-0"]
     DECOMPRESSION_ARGS = ["--decompress", "--stdout"]
 
